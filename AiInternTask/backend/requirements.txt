@@ -1,0 +1,12 @@
+langchain
+streamlit
+chromadb
+python-dotenv
+PyPDF2
+pytesseract
+pillow
+pdfplumber
+openai
+tqdm
+sentence-transformers
+unstructured
