@@ -1,0 +1,15 @@
+langchain
+streamlit
+chromadb
+python-dotenv
+PyPDF2
+PyMuPDF
+pytesseract
+pillow
+pdfplumber
+openai
+tqdm
+sentence-transformers
+unstructured
+docx
+langchain_community
