@@ -20,6 +20,7 @@ class Embedder:
         """Convert raw text into LangChain Document objects."""
         docs = []
         for source, text in text_dict.items():
+            # Metadata includes source filename (you can add page etc here if needed)
             docs.append(Document(page_content=text, metadata={"source": source}))
         return docs
 
@@ -27,18 +28,12 @@ class Embedder:
         """Generate and persist embeddings from the document dictionary."""
         documents = self._prepare_documents(text_dict)
 
-        # Create and persist Chroma vector store
         self.vector_store = Chroma.from_documents(
             documents=documents,
             embedding=self.embedding_model,
             persist_directory=self.db_path
         )
         self.vector_store.persist()
-
-    # Add this method to support your current main.py call
-    def add_documents(self, text_dict: Dict[str, str]):
-        """Alias for store_embeddings to add documents to vector store."""
-        self.store_embeddings(text_dict)
 
     def load_vectorstore(self):
         """Load existing vector store from disk."""
@@ -52,3 +47,4 @@ class Embedder:
         if self.vector_store is None:
             self.load_vectorstore()
         return self.vector_store.similarity_search(user_query, k=k)
+

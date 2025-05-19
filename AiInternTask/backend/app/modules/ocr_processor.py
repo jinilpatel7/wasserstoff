@@ -3,9 +3,6 @@ from PIL import Image
 import pytesseract
 from typing import Dict, List
 
-# Optional: set tesseract cmd path if not in environment PATH
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-
 SUPPORTED_IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".tiff", ".bmp"]
 
 def is_image_file(file_path: str) -> bool:
@@ -27,7 +24,6 @@ def process_images(file_paths: List[str]) -> Dict[str, str]:
 
     for file_path in file_paths:
         if is_image_file(file_path):
-            text = extract_text_from_image(file_path)
-            extracted_texts[file_path] = text
+            extracted_texts[file_path] = extract_text_from_image(file_path)
 
     return extracted_texts
