@@ -37,3 +37,4 @@ def extract_all_text(file_paths: List[str]) -> Dict[str, str]:
         extracted_data[file_path] = text
 
     return extracted_data
+

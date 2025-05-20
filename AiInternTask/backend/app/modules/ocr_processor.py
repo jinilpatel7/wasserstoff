@@ -27,3 +27,4 @@ def process_images(file_paths: List[str]) -> Dict[str, str]:
             extracted_texts[file_path] = extract_text_from_image(file_path)
 
     return extracted_texts
+

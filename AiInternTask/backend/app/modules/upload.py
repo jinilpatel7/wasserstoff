@@ -26,18 +26,3 @@ def save_uploaded_files(uploaded_files: List) -> List[str]:
 
     return saved_paths
 
-
-# def upload_ui():
-#     """Streamlit interface for uploading documents/images."""
-#     st.sidebar.header("📁 Upload Documents")
-#     uploaded_files = st.sidebar.file_uploader(
-#         "Upload PDFs or images (JPG, PNG, TIFF, etc.)",
-#         type=["pdf", "jpg", "jpeg", "png", "tiff", "bmp"],
-#         accept_multiple_files=True,
-#     )
-
-#     if uploaded_files:
-#         file_paths = save_uploaded_files(uploaded_files)
-#         st.sidebar.success(f"Uploaded {len(file_paths)} files.")
-#         return file_paths
-#     return []
