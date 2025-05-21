@@ -11,4 +11,4 @@ __pycache__/
 backend/data
 backend/data/chroma_db/
 
-AiInternTask\backend\.env
+/backend/.env
