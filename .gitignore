@@ -12,3 +12,4 @@ backend/data
 backend/data/chroma_db/
 
 /backend/.env
+AiInternTask/backend/.env
