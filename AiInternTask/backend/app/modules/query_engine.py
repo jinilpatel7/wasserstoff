@@ -1,89 +1,111 @@
+# This is my query_engine.py code 
+import os
 from typing import List, Dict
 from langchain_core.documents import Document
-from langchain_core.prompts import PromptTemplate
-from langchain_core.runnables import RunnableSequence
-from langchain_ollama import OllamaLLM
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
 from .embedder import Embedder
 
+load_dotenv()
+
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "mistralai/mistral-7b-instruct:free")
 
 class QueryEngine:
-    def __init__(self, model_name: str = "mistral"):
+    def __init__(self):
         self.embedder = Embedder()
-        self.llm = OllamaLLM(model=model_name)
+        self.embedder.load_vectorstore()
 
-        answer_prompt = PromptTemplate(
-            input_variables=["context", "question"],
-            template=(
-                """
-                You are an expert assistant helping analyze documents.
-                Given the following context, answer the user's question in a clear, concise, and well-formatted manner.
-                Use bullet points or numbered lists where appropriate.
-
-                Context:
-                {context}
-
-                Question:
-                {question}
-
-                Answer:
-                """
-            ),
+        self.llm = ChatOpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=OPENROUTER_API_KEY,
+            model=OPENROUTER_MODEL,
+            temperature=0.3,
         )
 
-        self.chain: RunnableSequence = answer_prompt | self.llm
+        self.prompt = ChatPromptTemplate.from_template(
+            """
+            You are a helpful assistant. Use the following context from documents to answer the question.
+            Respond with citations in the form "source: filename".
 
-    def get_similar_docs(self, query: str, top_k: int = 5) -> List[Document]:
-        return self.embedder.query(query, k=top_k)
+            Question: {question}
+            ============  
+            Context: {context}
+            ============  
+            Answer:
+            """
+        )
+        self.output_parser = StrOutputParser()
 
-    def get_qa_response(self, query: str, docs: List[Document]) -> str:
-        context = "\n\n".join([doc.page_content for doc in docs])
-        return self.chain.invoke({"context": context, "question": query})
+        self.single_doc_prompt = ChatPromptTemplate.from_template(
+            """
+            You are an expert assistant. You have the full text of one document below.
+            Answer the question ONLY using this document's text.
 
-    def extract_sources(self, docs: List[Document]) -> List[Dict]:
-        citations = []
-        for doc in docs:
-            source = doc.metadata.get("source", "Unknown")
-            snippet = doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content
-            citations.append({"source": source, "snippet": snippet})
-        return citations
+            Provide a concise, accurate answer and include precise citations specifying page number, paragraph, or sentence if possible.
 
-    def answer_query(self, query: str) -> Dict:
-        docs = self.get_similar_docs(query)
-        answer = self.get_qa_response(query, docs)
-        citations = self.extract_sources(docs)
-        return {"answer": answer, "citations": citations}
+            Document text:
+            {document_text}
 
-    def identify_themes(self, docs: List[Document]) -> List[Dict]:
-        if not docs:
+            Question:
+            {question}
+
+            Answer (include citations with page/paragraph/sentence references):
+            """
+        )
+
+    def answer_query(self, query: str) -> Dict[str, any]:
+        docs = self.embedder.query(query, k=5)
+        context = "\n\n".join([f"{doc.metadata['source']}:\n{doc.page_content}" for doc in docs])
+        prompt_input = self.prompt.invoke({"question": query, "context": context})
+        response = self.llm.invoke(prompt_input.to_messages())
+        parsed_answer = self.output_parser.invoke(response)
+
+        citations = [{"source": doc.metadata["source"], "snippet": doc.page_content[:300]} for doc in docs]
+        return {"answer": parsed_answer, "citations": citations}
+
+    def answer_query_single_document(self, query: str, document: Document) -> str:
+        prompt_input = self.single_doc_prompt.invoke({
+            "document_text": document.page_content,
+            "question": query
+        })
+        response = self.llm.invoke(prompt_input.to_messages())
+        return response.content
+
+    def identify_themes(self, documents: List[Document]) -> List[Dict[str, any]]:
+        if not documents:
             return []
 
-        grouped_docs = {}
-        for doc in docs:
-            source = doc.metadata.get("source", "Unknown")
-            grouped_docs.setdefault(source, []).append(doc.page_content)
+        chunks = [f"{doc.metadata['source']}:\n{doc.page_content}" for doc in documents]
+        joined_text = "\n\n".join(chunks[:10])  # avoid context length overflow
 
-        condensed_contexts = []
-        for source, texts in grouped_docs.items():
-            combined_text = "\n".join(texts)
-            condensed_contexts.append(f"[{source}]:\n{combined_text[:1000]}")  # Limit per document
+        theme_prompt = ChatPromptTemplate.from_template(
+            """
+            Analyze the following document excerpts and identify key recurring themes or topics.
+            For each theme, provide a brief summary and mention which documents support it.
 
-        full_context = "\n\n".join(condensed_contexts)
-
-        theme_prompt = (
-            "You are an expert analyzing multiple documents to extract recurring themes.\n"
-            "Below are excerpts from several documents. Identify 3 to 5 key themes that appear across them.\n"
-            "For each theme:\n"
-            "- Name the theme\n"
-            "- Briefly explain it\n"
-            "- List the document sources where this theme appears (like [doc1.pdf])\n\n"
-            "Themes:\n\n"
-            f"{full_context}"
+            ============  
+            {joined_text}
+            ============  
+            Output format:
+            [
+              {{
+                "theme": "...",
+                "summary": "...",
+                "supporting_docs": ["filename1", "filename2"]
+              }},
+              ...
+            ]
+            """
         )
+        prompt_input = theme_prompt.invoke({"joined_text": joined_text})
+        response = self.llm.invoke(prompt_input.to_messages())
 
         try:
-            response = self.llm.invoke(theme_prompt).strip()
-            return [{"theme": "Identified Themes", "summary": response, "supporting_docs": list(grouped_docs.keys())}]
-        except Exception as e:
-            print(f"Error identifying themes: {e}")
+            import ast
+            return ast.literal_eval(response.content.strip())
+        except Exception:
             return []
 

@@ -1,3 +1,4 @@
+# This is upload.py code 
 import os
 import shutil
 import tempfile
@@ -5,7 +6,7 @@ import streamlit as st
 from typing import List
 
 
-UPLOAD_DIR = "AiInternTask/backend/data/uploads"
+UPLOAD_DIR = "./backend/data/uploads"
 
 def save_uploaded_files(uploaded_files: List) -> List[str]:
     """Saves uploaded files to the local upload directory and returns paths."""
@@ -25,4 +26,4 @@ def save_uploaded_files(uploaded_files: List) -> List[str]:
         saved_paths.append(final_path)
 
     return saved_paths
-
+    
