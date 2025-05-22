@@ -1,9 +1,7 @@
 import os
 import shutil
 import tempfile
-import streamlit as st
 from typing import List
-
 
 UPLOAD_DIR = "./backend/data/uploads"
 
@@ -25,4 +23,3 @@ def save_uploaded_files(uploaded_files: List) -> List[str]:
         saved_paths.append(final_path)
 
     return saved_paths
-    

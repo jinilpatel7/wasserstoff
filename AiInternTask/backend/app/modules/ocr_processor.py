@@ -21,10 +21,7 @@ def extract_text_from_image(file_path: str) -> str:
 def process_images(file_paths: List[str]) -> Dict[str, str]:
     """Processes all image files and returns extracted text per file."""
     extracted_texts = {}
-
     for file_path in file_paths:
         if is_image_file(file_path):
             extracted_texts[file_path] = extract_text_from_image(file_path)
-
     return extracted_texts
-

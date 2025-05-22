@@ -2,14 +2,13 @@ import os
 import sys
 import streamlit as st
 import pandas as pd
-import torch  
+import torch
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "modules")))
 
 from backend.app.modules.upload import save_uploaded_files
 from langchain_core.documents import Document
 from backend.app.modules.text_extractor import extract_all_text
-from backend.app.modules.ocr_processor import process_images
 from backend.app.modules.embedder import Embedder
 from backend.app.modules.query_engine import QueryEngine
 
@@ -29,8 +28,8 @@ if "document_names" not in st.session_state:
 # --- Upload ---
 st.sidebar.header("1. Upload Documents")
 uploaded_files = st.sidebar.file_uploader(
-    "Upload PDFs and images",
-    type=["pdf", "png", "jpg", "jpeg", "tiff"],
+    "Upload PDFs, Word Docs, Text Files, and Images",
+    type=["pdf", "docx", "txt", "png", "jpg", "jpeg", "tiff"],
     accept_multiple_files=True,
 )
 
@@ -39,19 +38,13 @@ if uploaded_files:
         os.makedirs(DOCS_FOLDER, exist_ok=True)
         saved_paths = save_uploaded_files(uploaded_files)
 
-        pdf_files = [f for f in saved_paths if f.lower().endswith(".pdf")]
-        image_files = [f for f in saved_paths if not f.lower().endswith(".pdf")]
+        combined_texts = extract_all_text(saved_paths)
+        st.session_state.extracted_docs.update(combined_texts)
+        st.session_state.document_names.update([os.path.basename(f) for f in combined_texts.keys()])
 
-        ocr_texts = process_images(image_files) if image_files else {}
-        pdf_texts = extract_all_text(pdf_files) if pdf_files else {}
-
-        combined = {**pdf_texts, **ocr_texts}
-        st.session_state.extracted_docs.update(combined)
-        st.session_state.document_names.update([os.path.basename(f) for f in combined.keys()])
-
-        if combined:
-            embedder.store_embeddings(combined)
-            st.success(f"Successfully processed {len(combined)} documents!")
+        if combined_texts:
+            embedder.store_embeddings(combined_texts)
+            st.success(f"Successfully processed {len(combined_texts)} documents!")
 
 # --- Query ---
 if st.session_state.extracted_docs:
