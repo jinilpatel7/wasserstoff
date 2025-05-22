@@ -13,3 +13,12 @@ backend/data/chroma_db/
 
 /backend/.env
 AiInternTask/backend/.env
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+backend/data/chroma_db/
+backend/data/uploads/
+backend/.env
+myenv/

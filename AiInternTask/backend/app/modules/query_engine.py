@@ -1,4 +1,3 @@
-# This is my query_engine.py code 
 import os
 from typing import List, Dict
 from langchain_core.documents import Document

@@ -1,4 +1,3 @@
-# This is text_extractor.py code 
 import os
 import fitz  # PyMuPDF
 from typing import Dict, List

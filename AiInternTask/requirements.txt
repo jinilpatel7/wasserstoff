@@ -28,3 +28,4 @@ langchain-core
 torch
 transformers
 
+langchain_openai

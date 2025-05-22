@@ -1,4 +1,3 @@
-# This is upload.py code 
 import os
 import shutil
 import tempfile

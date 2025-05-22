@@ -1,4 +1,3 @@
-# This is ocr_processor.py code 
 import os
 from PIL import Image
 import pytesseract

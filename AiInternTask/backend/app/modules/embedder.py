@@ -1,4 +1,3 @@
-# This is my embedder.py code 
 import os
 from typing import List, Dict
 from langchain_huggingface import HuggingFaceEmbeddings
